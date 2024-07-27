@@ -91,7 +91,7 @@
     "postcss": "^8.4.14",
     "prettier": "^2.8.8",
     "prisma": "^5.17.0",
-    "start-server-and-test": "^1.15.4",
+    "start-server-and-test": "^2.0.4",
     "tailwindcss": "^3.3.0",
     "typescript": "^5.5.3",
     "webpack": "^5.93.0"
