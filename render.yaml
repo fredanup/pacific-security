@@ -4,7 +4,7 @@ services:
   - type: web
     name: pacific-security
     env: node
-    plan: free
+    plan: starter
     # NODE_ENV is development here in order for pnpm to install dev deps
     buildCommand: NODE_ENV=development pnpm install && pnpm build
     startCommand: pnpm start
@@ -22,5 +22,5 @@ services:
       - fromGroup: pacific-security-env
 databases:
   - name: pacific-security-db
-    plan: starter
+    plan: basic-256mb
     # plan: free
