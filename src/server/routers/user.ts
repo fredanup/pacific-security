@@ -24,7 +24,20 @@ export const userRouter = createTRPCRouter({
     });
     return users;
   }),
+// Verificar asociaciones del usuario
+checkAssociations: protectedProcedure
+.input(z.object({ id: z.string() })) // Validar la entrada
+.query(async ({ input, ctx }) => {
+  const userAssociations = await ctx.prisma.jobApplication.count({
+    where: {
+      postulantId: input.id, // Asegúrate de que el campo de referencia sea correcto
+    },
+  });
 
+  return {
+    hasAssociations: userAssociations > 0,
+  };
+}),
   findOne: publicProcedure.input(z.string()).query(async ({ input }) => {
     const user = await prisma.user.findUnique({ where: { id: input } });
     return user;

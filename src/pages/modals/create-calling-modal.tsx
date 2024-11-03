@@ -16,7 +16,7 @@ export default function CreateCallingModal({
   selectedCalling: IEditCalling | null;
 }) {
   const [requirement, setRequirement] = useState<string>('');
-  const [minExpWork, setMinExpWork] = useState<number | null>(null);
+  const [minExpWork, setMinExpWork] = useState<string>('');
   const [resultAt, setResultAt] = useState<Date | null>(null);
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
 
@@ -37,7 +37,7 @@ export default function CreateCallingModal({
   useEffect(() => {
     if (selectedCalling !== null) {
       setRequirement(selectedCalling.requirement);
-      setMinExpWork(selectedCalling.min_exp_work);
+      setMinExpWork(selectedCalling.min_exp_work.toString());
       setResultAt(
         selectedCalling.resultAt ? new Date(selectedCalling.resultAt) : null,
       );
@@ -51,7 +51,7 @@ export default function CreateCallingModal({
     const value = event.target.value;
 
     if (/^\d*\.?\d*$/.test(value)) {
-      setMinExpWork(parseInt(value));
+      setMinExpWork(value);
     }
   };
 
@@ -71,7 +71,7 @@ export default function CreateCallingModal({
     }
     const callingData = {
       requirement: requirement,
-      min_exp_work: minExpWork!,
+      min_exp_work: parseInt(minExpWork),
       resultAt: resultAt!,
       expiresAt: expiresAt!,
     };
@@ -87,7 +87,7 @@ export default function CreateCallingModal({
 
     onClose();
     setRequirement('');
-    setMinExpWork(null);
+    setMinExpWork('');
     setResultAt(null);
     setExpiresAt(null);
   };
@@ -127,12 +127,12 @@ export default function CreateCallingModal({
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-black text-sm font-bold">
-              Años de experiencia laboral requerida:
+              Años de experiencia laboral (en números):
             </label>
             <input
               type="text"
               className="focus:shadow-outline w-full appearance-none rounded-lg border px-2 py-1 leading-tight text-gray-700 focus:outline-none"
-              value={minExpWork!}
+              value={minExpWork}
               onChange={handleChange}
               required
             />

@@ -2,6 +2,7 @@ import { createTRPCRouter, publicProcedure } from '../trpc';
 import { prisma } from '../prisma';
 
 import { z } from 'zod';
+import { IBranch } from 'utils/auth';
 
 export const branchRouter = createTRPCRouter({
   //Listar a los usuarios con su sucursal adjunta
@@ -16,12 +17,13 @@ export const branchRouter = createTRPCRouter({
   .mutation(async ({ ctx, input }) => {
     try {
       const { name, address } = input;
-      await ctx.prisma.branch.create({          
+      const newBranch:IBranch=await ctx.prisma.branch.create({          
         data: {                
             name: name,        
             address: address             
         },
       });
+      return newBranch
     } catch (error) {
       console.log(error);
     }

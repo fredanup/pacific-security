@@ -21,10 +21,21 @@ export default function DeleteUserModal({
     event.preventDefault();
 
     if (selectedUser !== null) {
-      deletedUser.mutate({ id: selectedUser.id });
-      onClose();
+      if (checkUserAssociations.data?.hasAssociations) {
+        // Si el usuario tiene asociaciones, muestra un mensaje
+        alert(
+          'No se puede eliminar el usuario porque está asociado a otros registros.',
+        );
+      } else {
+        deletedUser.mutate({ id: selectedUser.id });
+        onClose();
+      }
     }
   };
+  const checkUserAssociations = trpc.user.checkAssociations.useQuery(
+    { id: selectedUser?.id || '' }, // Verifica las asociaciones
+    { enabled: !!selectedUser }, // Solo ejecuta si hay un usuario seleccionado
+  );
   //Estilizado del fondo detrás del modal. Evita al usuario salirse del modal antes de elegir alguna opción
   const overlayClassName = isOpen
     ? 'fixed top-0 left-0 w-full h-full rounded-lg bg-gray-800 opacity-60 z-20'

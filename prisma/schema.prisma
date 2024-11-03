@@ -71,7 +71,7 @@ model JobApplication {
   interviewLink String?
   Postulant     User      @relation(fields: [postulantId], references: [id])
   postulantId   String
-  Calling       Calling   @relation(fields: [callingId], references: [id])
+  Calling       Calling   @relation(fields: [callingId], references: [id], onDelete: Cascade)
   callingId     String
 }
 

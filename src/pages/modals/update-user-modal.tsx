@@ -19,10 +19,17 @@ export default function UpdateUserModal({
   const [role, setRole] = useState<string>('');
   const [branchId, setBranchId] = useState<string>('');
   const [isBranchOpen, setIsOpenBranch] = useState(false);
+
   const utils = trpc.useContext();
   //Mutación para la base de datos
   //Obtener todos los usuarios creados con su sucursal
   const { data: branchs } = trpc.branch.findMany.useQuery();
+  const createBranch = trpc.branch.createBranch.useMutation({
+    onSettled: async () => {
+      await utils.branch.findMany.invalidate();
+    },
+  });
+
   const updateUser = trpc.user.updateUser.useMutation({
     onSettled: async () => {
       await utils.user.findManyUserBranch.invalidate();
@@ -32,7 +39,14 @@ export default function UpdateUserModal({
   useEffect(() => {
     if (selectedUser !== null) {
       setName(selectedUser.name!);
-      setLastName(selectedUser.lastName!);
+      // Separar apellidos si están en formato `XXXX YYYYY ZZZZZ`
+      const fullNameParts = selectedUser.name!.split(' ');
+      if (fullNameParts.length >= 2) {
+        setName(fullNameParts[0]); // Primer parte como nombre
+        setLastName(`${fullNameParts.slice(1).join(' ')}`); // Restantes como apellidos
+      } else {
+        setLastName(selectedUser.lastName!); // Si no tiene 3 partes, usar lastName del usuario
+      }
       setRole(selectedUser.role!);
       if (branchs) {
         const matchedOption = branchs.find(
@@ -46,30 +60,69 @@ export default function UpdateUserModal({
   }, [branchs, selectedUser]);
 
   //Función de selección de registro y apertura de modal de edición
+  /*
   const openBranchModal = () => {
     setIsOpenBranch(true);
-  };
+  };*/
   //Función de cierre de modal de edición
   const closeBranchModal = () => {
     setIsOpenBranch(false);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    // Check if role is 'employer' and set branchId accordingly
+    if (role === 'employer') {
+      if (branchs?.[0] !== undefined) {
+        const defaultIdBranch = branchs[0].id;
+        setBranchId(defaultIdBranch);
+      } else {
+        const branchData = {
+          name: 'Sucursal principal',
+          address: 'Av. El sol S/N',
+        };
+
+        try {
+          const newBranch = await createBranch.mutateAsync(branchData);
+
+          if (newBranch?.id) {
+            setBranchId(newBranch.id);
+            console.log('Sucursal principal creada en la base de datos');
+          } else {
+            console.error('No se obtuvo un id válido para la nueva sucursal');
+            return; // Stop execution if branchId is not valid
+          }
+        } catch (error) {
+          console.error('Ocurrió un error al crear la sucursal:', error);
+          return; // Stop execution on error
+        }
+      }
+    }
+
+    // Ensure branchId is set correctly before updating the user
+    const updatedBranchId = branchId || branchs?.[0]?.id;
+    if (!updatedBranchId) {
+      console.error(
+        'branchId no está definido. No se puede actualizar el usuario.',
+      );
+      return;
+    }
 
     const userData = {
       name: name,
       lastName: lastName,
       role: role,
-      branchId: branchId,
+      branchId: updatedBranchId,
     };
 
     if (selectedUser !== null) {
-      updateUser.mutate({
+      await updateUser.mutateAsync({
         id: selectedUser.id,
         ...userData,
       });
     }
+
     onClose();
     setName('');
     setLastName('');
@@ -152,7 +205,8 @@ export default function UpdateUserModal({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
+          {/*
+            <div className="flex flex-col gap-2">
             <div className="flex flex-row justify-between items-center">
               <label className="text-black text-sm font-bold">Sucursal:</label>
               <svg
@@ -186,6 +240,7 @@ export default function UpdateUserModal({
               </select>
             </div>
           </div>
+  */}
 
           <div className="mt-4 pt-4 flex flex-row justify-end gap-2 border-t border-gray-200">
             <button
