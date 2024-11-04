@@ -124,36 +124,48 @@ export const documentRouter = createTRPCRouter({
   getUserDocuments: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const documentMetaData = await ctx.prisma.document.findMany({
-        select: {
-          document: true,
-          key: true,
-        },
-        where: {
-          userId: input.userId,
-        },
-      });
-
-      const { s3 } = ctx;
-      const listObjectsOutput = await s3.listObjectsV2({
-        Bucket: 'pacificsecurity',
-        Prefix: `documents/${input.userId}`, //Prefix: es la ruta de donde se listarán los objetos
-      });
-
-      const combinedList = documentMetaData.map((document) => {
-        let s3Object;
-        if (listObjectsOutput.Contents) {
-          s3Object = listObjectsOutput.Contents.find(
-            (obj) => obj.Key === document.key,
-          );
+      console.log('Fetching documents for userId:', input.userId);
+      try {
+        const documentMetaData = await ctx.prisma.document.findMany({
+          select: {
+            document: true,
+            key: true,
+          },
+          where: {
+            userId: input.userId,
+          },
+        });
+        
+        if (!documentMetaData || documentMetaData.length === 0) {
+          console.error('No document metadata found for userId:', input.userId);
+          return []; // Maneja el caso donde no hay documentos
         }
-        return {
-          ...document,
-          s3Object,
-        };
-      });
-
-      return combinedList;
+        const { s3 } = ctx;
+        const listObjectsOutput = await s3.listObjectsV2({
+          Bucket: 'pacificsecurity',
+          Prefix: `documents/${input.userId}`, //Prefix: es la ruta de donde se listarán los objetos
+        });
+        
+        
+        const combinedList = documentMetaData.map((document) => {
+          let s3Object;
+          if (listObjectsOutput.Contents) {
+            s3Object = listObjectsOutput.Contents.find(
+              (obj) => obj.Key === document.key,
+            );
+          }
+       
+          return {
+            ...document,
+            s3Object,
+          };
+        });
+        
+        return combinedList;
+      } catch (error) {
+        console.error('Error fetching documents:', error);
+        throw error; // O manejar el error según tu lógica
+      }
     }),
 
 });
